@@ -341,6 +341,34 @@ static void nativeRegisterCustomFunction(JNIEnv* env, jclass clazz, jlong connec
     }
 }
 
+// from https://github.com/requery/sqlite-android/blob/665608662eaa0071465cb0887f34ae177e52f130/sqlite-android/src/main/jni/sqlite/android_database_SQLiteConnection.cpp#L953
+static void nativeLoadExtension(JNIEnv* env, jobject clazz,
+                                jlong connectionPtr, jstring file, jstring proc) {
+    char* errorMessage;
+
+    auto* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+    int result = sqlite3_enable_load_extension(connection->db, 1);
+    if (result == SQLITE_OK) {
+        const char* fileChars = env->GetStringUTFChars(file, NULL);
+        const char* procChars = NULL;
+        if (proc) {
+            procChars = env->GetStringUTFChars(proc, NULL);
+        }
+        result = sqlite3_load_extension(connection->db, fileChars, procChars, &errorMessage);
+        env->ReleaseStringUTFChars(file, fileChars);
+        if (proc) {
+            env->ReleaseStringUTFChars(proc, procChars);
+        }
+    }
+    if (result != SQLITE_OK) {
+        char* formattedError = sqlite3_mprintf("Could not register extension: %s", errorMessage);
+        sqlite3_free(errorMessage);
+
+        throw_sqlite3_exception_errcode(env, result, formattedError);
+        sqlite3_free(formattedError);
+    }
+}
+
 static void nativeRegisterLocalizedCollators(JNIEnv* env, jclass clazz, jlong connectionPtr,
         jstring localeStr) {
   /* Localized collators are not supported. */
@@ -839,6 +867,8 @@ static JNINativeMethod sMethods[] =
             (void*)nativeClose },
     { "nativeRegisterCustomFunction", "(JLnet/zetetic/database/sqlcipher/SQLiteCustomFunction;)V",
             (void*)nativeRegisterCustomFunction },
+    { "nativeLoadExtension", "(JLjava/lang/String;Ljava/lang/String;)V",
+            (void*) nativeLoadExtension },
     { "nativeRegisterLocalizedCollators", "(JLjava/lang/String;)V",
             (void*)nativeRegisterLocalizedCollators },
     { "nativePrepareStatement", "(JLjava/lang/String;)J",

@@ -127,6 +127,8 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
     private static native void nativeClose(long connectionPtr);
     private static native void nativeRegisterCustomFunction(long connectionPtr,
             SQLiteCustomFunction function);
+
+    private static native void nativeLoadExtension(long connectionPtr, String name, String entrypoint);
     private static native void nativeRegisterLocalizedCollators(long connectionPtr, String locale);
     private static native long nativePrepareStatement(long connectionPtr, String sql);
     private static native void nativeFinalizeStatement(long connectionPtr, long statementPtr);
@@ -429,6 +431,10 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
       if( nativeHasCodec() ){
 	setLocaleFromConfiguration();
       }
+    }
+
+    void loadExtension(String name, String entryPoint) {
+        nativeLoadExtension(mConnectionPtr, name, entryPoint);
     }
 
     // Called by SQLiteConnectionPool only.

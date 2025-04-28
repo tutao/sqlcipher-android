@@ -1077,6 +1077,13 @@ public final class SQLiteDatabase extends SQLiteClosable implements SupportSQLit
         }
     }
 
+    public void loadExtension(String fileName, String entryPoint) {
+        synchronized (mLock) {
+            throwIfNotOpenLocked();
+            this.mConnectionPoolLocked.loadExtension(fileName, entryPoint);
+        }
+    }
+
     /**
      * Gets the database version.
      *

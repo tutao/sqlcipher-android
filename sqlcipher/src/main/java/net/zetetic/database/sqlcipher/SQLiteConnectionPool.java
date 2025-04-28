@@ -336,6 +336,15 @@ public final class SQLiteConnectionPool implements Closeable {
         }
     }
 
+    public void loadExtension(String file, String entryPoint) {
+        SQLiteConnection connection = waitForConnection(null, 0, null);
+        try {
+            connection.loadExtension(file, entryPoint);
+        } finally {
+            releaseConnection(connection);
+        }
+    }
+
     /**
      * Acquires a connection from the pool.
      * <p>
